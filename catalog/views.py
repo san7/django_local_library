@@ -39,10 +39,16 @@ from django.views import generic
 class BookListView(generic.ListView):
     model = Book
     paginate_by = 10
-	
 
 class BookDetailView(generic.DetailView):
     model = Book
+
+class AuthorListView(generic.ListView):
+    model = Author
+    paginate_by = 10
+
+class AuthorDetailView(generic.DetailView):
+    model = Author
 
 class LoanedBooksByUserListView(LoginRequiredMixin,generic.ListView):
     """Generic class-based view listing books on loan to current user."""
@@ -52,6 +58,18 @@ class LoanedBooksByUserListView(LoginRequiredMixin,generic.ListView):
     
     def get_queryset(self):
         return BookInstance.objects.filter(borrower=self.request.user).filter(status__exact='o').order_by('due_back')
+
+from django.contrib.auth.mixins import PermissionRequiredMixin
+
+class LoanedBooksAllListView(PermissionRequiredMixin,generic.ListView):
+    model = BookInstance
+    permission_required = 'catalog.can_mark_returned'
+    template_name ='catalog/bookinstance_list_borrowed_all.html'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        return BookInstance.objects.filter(status__exact='o').order_by('due_back')
+
 
 import datetime
 
@@ -79,7 +97,7 @@ def renew_book_librarian(request, pk):
             book_instance.save()
 
             # redirect to a new URL:
-            return HttpResponseRedirect(reverse('my-borrowed') )
+            return HttpResponseRedirect(reverse('all-borrowed') )
 
     # If this is a GET (or any other method) create the default form.
     else:
@@ -96,8 +114,6 @@ def renew_book_librarian(request, pk):
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 
-from catalog.models import Author
-
 class AuthorCreate(CreateView):
     model = Author
     fields = '__all__'
@@ -110,4 +126,18 @@ class AuthorUpdate(UpdateView):
 class AuthorDelete(DeleteView):
     model = Author
     success_url = reverse_lazy('authors')
+
+class BookCreate(CreateView):
+    model = Book
+    fields = '__all__'
+
+class BookUpdate(UpdateView):
+    model = Book
+    fields = '__all__'
+
+class BookDelete(DeleteView):
+    model = Book
+    success_url = reverse_lazy('books')
+
+
 	

@@ -12,6 +12,14 @@ class Genre(models.Model):
         """String for representing the Model object."""
         return self.name
 
+class Language(models.Model):
+    """Model representing a book language."""
+    name = models.CharField(max_length=200, help_text='Enter a book language (e.g. English)')
+    
+    def __str__(self):
+        """String for representing the Model object."""
+        return self.name
+		
 from django.urls import reverse # Used to generate URLs by reversing the URL patterns
 
 class Book(models.Model):
@@ -29,6 +37,8 @@ class Book(models.Model):
     # Genre class has already been defined so we can specify the object above.
     genre = models.ManyToManyField(Genre, help_text='Select a genre for this book')
     
+    language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True)
+	
     def __str__(self):
         """String for representing the Model object."""
         return self.title
@@ -68,16 +78,16 @@ class BookInstance(models.Model):
         help_text='Book availability',
     )
 
+    class Meta:
+        ordering = ['due_back']
+        permissions = (("can_mark_returned", "Set book as returned"),)	
+
     @property
     def is_overdue(self):
         if self.due_back and date.today() > self.due_back:
             return True
         return False
-	
-    class Meta:
-        ordering = ['due_back']
-        permissions = (("can_mark_returned", "Set book as returned"),)	
-
+		
     def __str__(self):
         """String for representing the Model object."""
         return f'{self.id} ({self.book.title})'
